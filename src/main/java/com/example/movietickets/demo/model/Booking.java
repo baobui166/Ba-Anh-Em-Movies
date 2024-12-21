@@ -64,4 +64,5 @@ public class Booking {
     @JsonBackReference
     @OneToMany(mappedBy = "booking", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<BookingDetail> bookingDetails;
+
 }

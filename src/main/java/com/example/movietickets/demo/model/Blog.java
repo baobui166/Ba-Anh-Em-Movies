@@ -3,6 +3,7 @@ package com.example.movietickets.demo.model;
 
 import jakarta.persistence.*;
 import lombok.Data;
+import org.attoparser.dom.Text;
 
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
@@ -20,7 +21,7 @@ public class Blog {
     @Column(name = "BLOG_TITLE", nullable = false)
     private String title;
 
-    @Column(name = "BLOG_CONTENT", nullable = false)
+    @Column(name = "BLOG_CONTENT",columnDefinition = "LONGTEXT",length = 1000000,nullable = false)
     private String content;
 
     @Column(name = "BLOG_DAYCREATE", nullable = false)

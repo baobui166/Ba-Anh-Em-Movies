@@ -1,16 +1,17 @@
-package com.example.movietickets.demo.DTO;
+package com.example.movietickets.demo.model;
 
-import com.example.movietickets.demo.model.Booking;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
+import org.springframework.format.annotation.DateTimeFormat;
 
+import java.time.LocalDateTime;
 import java.util.Date;
 
 @Entity
 @Getter
 @Setter
-public class MoMoPaymentDto {
+public class MoMoPaymentSave {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
@@ -28,5 +29,7 @@ public class MoMoPaymentDto {
     private Date paymentTime;
     private String failureMessage;
 
+    @DateTimeFormat(pattern = "dd-MM-yyyy HH:mm:ss")
+    private LocalDateTime responseTime;
     // Getters and setters
 }

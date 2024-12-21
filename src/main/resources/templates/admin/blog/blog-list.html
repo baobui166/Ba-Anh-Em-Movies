@@ -6,6 +6,18 @@
 <head>
     <meta charset="UTF-8">
     <title th:text="${title} ?: 'Kết Quả'">Title</title>
+
+    <style>
+        .main__table-text {
+            display: -webkit-box;      /* Tạo block để dùng với `line-clamp` */
+            -webkit-box-orient: vertical;
+            overflow: hidden;         /* Ẩn phần nội dung vượt quá */
+            text-overflow: ellipsis;  /* Thêm dấu ba chấm */
+            white-space: normal;      /* Cho phép xuống dòng */
+            -webkit-line-clamp: 2;    /* Giới hạn số dòng hiển thị (ở đây là 2 dòng) */
+        }
+
+    </style>
 </head>
 <body>
 <section layout:fragment="content">
@@ -49,7 +61,7 @@
                                     <img th:src="${item.poster}" alt="Blog Poster" style="max-width: 100px;"/>
                                 </td>
                                 <td>
-                                    <div class="main__table-text" th:text="${item.content}"></div>
+                                    <div class="main__table-text" th:text="${#strings.length(item.content) > 50 ? #strings.substring(item.content, 0, 50) + '...' : item.content}"></div>
                                 </td>
                                 <td>
                                     <div class="main__table-text" th:text="${item.date}"></div>
@@ -81,7 +93,7 @@
     </main>
     <!-- end main content -->
 
-    modal delete
+<!--    modal delete-->
     <div id="modal-delete" class="zoom-anim-dialog mfp-hide modal">
         <h6 class="modal__title">Thông báo</h6>
         <p class="modal__text">Bạn có muốn xoá dữ liệu này không? Không thể xoá dữ liệu đã có liên kết.</p>

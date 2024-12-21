@@ -1,6 +1,6 @@
 package com.example.movietickets.demo.service;
 
-import com.example.movietickets.demo.DTO.MoMoPaymentDto;
+import com.example.movietickets.demo.model.MoMoPaymentSave;
 import com.example.movietickets.demo.repository.MoMoPaymentRepository;
 import lombok.AllArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -13,11 +13,11 @@ public class MoMoPaymentService {
 
     private final MoMoPaymentRepository paymentRepository;
 
-    public void savePayment(MoMoPaymentDto moMoPaymentDto)
+    public void savePayment(MoMoPaymentSave moMoPaymentSave)
     {
-        paymentRepository.save(moMoPaymentDto);
+        paymentRepository.save(moMoPaymentSave);
     }
-    public Optional<MoMoPaymentDto> getPaymentById(String orderId) {
+    public Optional<MoMoPaymentSave> getPaymentById(String orderId) {
         return paymentRepository.findByOrderId(orderId);
     }
 

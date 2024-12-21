@@ -63,7 +63,7 @@ public class AdminPromotionController {
     }
 
     @PostMapping("/edit")
-    public String editPromotion( @Valid @ModelAttribute("promotion") Promotion promotion, BindingResult result,Model model) {
+    public String editPromotion(@Valid @ModelAttribute("promotion") Promotion promotion, BindingResult result,Model model) {
         if (result.hasErrors()) {
             var errors = result.getAllErrors()
                     .stream()

@@ -43,7 +43,7 @@
                 <div class="col-12">
                     <div class="main__title">
                         <h2 th:text="${title} +' '+ ${id}"></h2>
-                        <a th:href="@{/admin/cinemas}" class="main__title-link back-button" style="margin-left: 15px">
+                        <a th:href="@{/admin/cinemas}" class="main__title-link back-button" style="margin-left: auto">
                             <svg width="24" height="24" viewBox="0 0 489.394 489.394" fill="currentColor">
                                 <path d="M375.789,92.867H166.864l17.507-42.795c3.724-9.132,1-19.574-6.691-25.744c-7.701-6.166-18.538-6.508-26.639-0.879
             L9.574,121.71c-6.197,4.304-9.795,11.457-9.563,18.995c0.231,7.533,4.261,14.446,10.71,18.359l147.925,89.823
@@ -55,7 +55,7 @@
                             <span>Trở về</span>
                         </a>
 
-                        <a th:href="@{/admin/seats/add}" class="main__title-link">Thêm mới</a>
+                        <a th:href="@{/admin/seats/add}" style="margin-left: 16px" class="main__title-link">Thêm mới</a>
                     </div>
                 </div>
                 <div class="col-12">
@@ -63,9 +63,10 @@
                         <form method="get" th:action="@{/admin/rooms/{id}(id=${room.id})}">
                             <label for="schedule">Chọn lịch chiếu:</label>
                             <select name="scheduleId" id="schedule">
-                                <option value="-1">-- Tất cả --</option>
-                                <option th:each="schedule : ${schedules}" th:value="${schedule.id}"
-                                        th:selected="${schedule.id} == selectedScheduleId"
+                                <option value="0" th:selected="${selectedScheduleId == 0}">-- Tất cả --</option>
+                                <option th:each="schedule : ${schedules}"
+                                        th:value="${schedule.id}"
+                                        th:selected="${schedule.id == selectedScheduleId}"
                                         th:text="${schedule.startTime}"></option>
                             </select>
                             <button type="submit" class="btn btn-primary">Lọc</button>
@@ -107,7 +108,8 @@
                     <div class="seat-section__container">
                         <h4 class="seat-section__title">Ghế VIP</h4>
                         <div class="seat-section__items">
-                            <div class="seat-item" th:each="item : ${seats}" th:if="${item.seatType} == 'VIP'" th:data-status="${item.status}">
+                            <div class="seat-item" th:each="item : ${seats}" th:if="${item.seatType} == 'VIP'"
+                                 th:data-status="${item.status}">
                                 <div class="seat-item__info">
                                     <p>
                                         <strong>Số ghế:</strong>

@@ -21,4 +21,10 @@ public interface BookingDetailRepository extends JpaRepository<BookingDetail, Lo
     Optional<BookingDetail> findBySeatAndSchedule(@Param("seatId") Long seatId, @Param("scheduleId") Long scheduleId);
 
     List<BookingDetail> findBookingDetailByScheduleId(Long scheduleId);
+
+    @Query("SELECT bd FROM BookingDetail bd WHERE bd.seat.room.id = :roomId AND bd.schedule.id = :scheduleId")
+    List<BookingDetail> findByRoomIdAndScheduleId(
+            @Param("roomId") Long roomId,
+            @Param("scheduleId") Long scheduleId
+    );
 }

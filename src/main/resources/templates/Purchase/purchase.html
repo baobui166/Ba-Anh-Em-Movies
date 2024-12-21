@@ -72,6 +72,11 @@
         .custom-button {
             margin-top: 10px;
         }
+
+        .update-profile{
+            margin: 16px auto;
+        }
+
     </style>
 </head>
 <body>
@@ -92,8 +97,8 @@
             <div class="details-banner-wrapper">
                 <div class="details-banner-content style-two">
                     <h3 class="title" th:text="${filmTitle}"></h3>
-                    <div class="tags">
-                        <a href="#0" th:text="${category}"></a>
+                    <div class="tags" >
+                        <a href="#0" th:each="item : ${categories}" th:text="${item.name}"></a>
                     </div>
                 </div>
             </div>
@@ -105,17 +110,6 @@
         <div class="container">
             <div class="row">
                 <div class="col-lg-7">
-                    <div class="checkout-widget checkout-contact" style="padding-left:60px">
-                        <h5 class="title"> Cập nhật thông tin </h5>
-                        <form class="checkout-contact-form">
-                            <div class="form-group">
-                                <span>Cập nhật thông tin để nhận được mã giảm giá</span>
-                            </div>
-                            <a href="/user/profile" class="form-group">
-                                <span>Trang cá nhân</span>
-                            </a>
-                        </form>
-                    </div>
                     <div th:if="${selectedSeats}">
                         <form action="#" th:action="@{/purchase/checkout}" method="post">
                             <!--Nhập mã giảm giá -->
@@ -196,7 +190,6 @@
 
                                 <label for="payment">Phương thức thanh toán:</label>
                                 <select class="form-control" name="payment" id="payment">
-                                    <option value="">Chọn phương thức</option>
                                     <option value="Cash">Trả tiền tại quầy</option>
                                     <option value="momo">MOMO</option>
                                     <option value="paypal">Paypal</option>
@@ -210,6 +203,7 @@
                                 </select>
 
                                 <button type="submit" class="custom-button mt-5">Thanh toán</button>
+                            </div>
                         </form>
                     </div>
                     <div th:if="${message}" class="mt-5">
@@ -259,19 +253,7 @@
 
                             </li>
                         </ul>
-
-                        <!--                        <div >-->
-                        <!--                            <p class="info">-->
-                        <!--                                Mã giảm giá áp dụng: <span th:text="${promoCode}"></span>-->
-                        <!--                            </p>-->
-                        <!--                        </div>-->
                     </div>
-                    <!--                    <div class="proceed-area text-center">-->
-                    <!--                        <h6 class="subtitle">-->
-                    <!--                            <span>Tổng Cộng</span><span class="totalCheckout" th:text="${totalPrice}"></span>-->
-                    <!--                        </h6>-->
-                    <!--&lt;!&ndash;                        <a href="#0" class="custom-button back-button">Thanh toán</a>&ndash;&gt;-->
-                    <!--                    </div>-->
                     <div class="proceed-area text-center">
                         <h6 class="subtitle">
                             <span>Tổng Cộng</span>

@@ -1,4 +1,4 @@
-document.querySelectorAll('.main__table-btn--edit').forEach(button => {
+document.querySelectorAll('.print-ticket').forEach(button => {
     button.addEventListener('click', function (event) {
         event.preventDefault(); // Prevent default link behavior
         const bookingId = this.getAttribute('data-booking-id'); // Get the booking ID from the button

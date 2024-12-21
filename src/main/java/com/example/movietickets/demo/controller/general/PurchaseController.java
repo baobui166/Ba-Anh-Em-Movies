@@ -25,6 +25,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
+import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
 import java.math.BigDecimal;
 import java.net.URLEncoder;
@@ -190,7 +191,7 @@ public class PurchaseController {
                     message = "Thanh toán thành công!";
                     break;
                 case "failed":
-                    redirectAttributes.addFlashAttribute("message",  message != null ? "Thanh toán thất bại: " + message : "Thanh toán thất bại!");
+                    redirectAttributes.addFlashAttribute("message", "Thanh toán thất bại! Lỗi: " +message);
                     break;
 
             }
@@ -299,8 +300,9 @@ public class PurchaseController {
 
             if ("paypal".equalsIgnoreCase(payment)) {
                 try {
-                    String cancelUrl = "http://localhost:8080/purchase/cancel";
-                    String successUrl = "http://localhost:8080/purchase/success?scheduleId=" + scheduleId;
+                    String getCurrentURL = ServletUriComponentsBuilder.fromCurrentContextPath().build().toUriString();
+                    String cancelUrl = getCurrentURL+ "/purchase/cancel";
+                    String successUrl = getCurrentURL+ "/purchase/success?scheduleId=" + scheduleId;
 
                     Payment paypalPayment = paypalService.createPayment(totalPriceUSD.doubleValue(),
                             "USD",

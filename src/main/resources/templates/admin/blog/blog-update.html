@@ -22,8 +22,9 @@
                 <!-- form -->
                 <div class="col-12">
                     <form th:action="@{/admin/blogs/edit/{id}(id=${blog.id})}" th:object="${blog}"
-                          method="POST" class="form"
+                          method="post" class="form"
                           enctype="multipart/form-data">
+                        <input type="hidden" name="id" th:value="${blog.id}">
                         <div class="row">
                             <div class="col-12 col-md-5 form__cover">
                                 <div class="row">

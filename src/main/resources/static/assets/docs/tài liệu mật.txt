@@ -1,0 +1,17 @@
+user tạo booking, chọn thanh toán momo -> localhost/api/..momo (1)
+(1): lưu data booking vào db (có lưu orderId vào cột transaction_id) -> gửi request tới api momo để d lấy link thanh toán của momo.
+
+trang thanh toán momo: user quét mã thanh toán thành công -> momo chuyển hướng về trang lịch sử đặt vé trên web mình. (vì lý do nào đó momo k gửi IPN nên phải check thủ công).
+
+trang lịch sử đặt vé hiện nút "kiểm tra thanh toán" (đối với thanh toán mommo) -> khi bấm nút phía server sẽ gửi api check giao dịch tới momo (sử dung transaction_id đã lưu theo booking). (2)
+(2): nếu nhận resultCode = 0: cập nhật booking payment_status = 1.
+
+payment_status:
+	1: thành công.
+	0: đang chờ thah toán.
+	-1: thanh toán that bại ~ quá thời gian thanh toán. Cho phép đặt lại ghế đó.
+
+
+cron job: tiến trình tự động chạy theo thời gian cài đặt. ví dụ đoạn code sẽ chạy 1 lần/phút. Kiểm tra booking có vượt quá thời gian quy định hay k.
+
+Thời gian thanh toán max 5p: user vẫn đang ở trang quét momo trong khi hệ thống web mình đã xoá booking do quá thời hạn. 

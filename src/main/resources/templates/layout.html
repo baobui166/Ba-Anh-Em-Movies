@@ -65,6 +65,7 @@
             --df-messenger-message-border: 1px solid black;
             --df-messenger-chat-bubble-background: black;
             --df-messenger-chat-bubble-icon-color: white;
+
         }
 
         .test {
@@ -594,33 +595,43 @@
 </script>
 <!--chat bot-->
 <script src="https://www.gstatic.com/dialogflow-console/fast/messenger/bootstrap.js?v=1"></script>
-<df-messenger intent="WELCOME" chat-icon="https://cdn-icons-png.flaticon.com/512/4954/4954813.png" chat-title="Ba Anh Em bot" agent-id="6e08a620-4272-4ba0-be06-c4f3b7366ddf" language-code="vi"></df-messenger>
+<df-messenger intent="WELCOME"
+              chat-icon="https://cdn-icons-png.flaticon.com/512/4954/4954813.png"
+              chat-title="Ba Anh Em bot"
+              agent-id="6e08a620-4272-4ba0-be06-c4f3b7366ddf"
+              language-code="vi">
+
+</df-messenger>
 <script>
     window.addEventListener('df-messenger-loaded', () => {
-        document.querySelector('df-messenger').shadowRoot.querySelector('.df-messenger-wrapper').querySelector('df-messenger-chat').shadowRoot.querySelector('.chat-wrapper').querySelector('df-messenger-titlebar').shadowRoot.querySelector('.title-wrapper').style.background = " -webkit-linear-gradient(169deg, #5560ff 17%, #aa52a1 63%, #ff4343 100%)";
+        document.querySelector('df-messenger').shadowRoot.
+        querySelector('.df-messenger-wrapper').
+        querySelector('df-messenger-chat').
+        shadowRoot.querySelector('.chat-wrapper').
+        querySelector('df-messenger-titlebar').
+        shadowRoot.querySelector('.title-wrapper').style.background = " -webkit-linear-gradient(169deg, #5560ff 17%, #aa52a1 63%, #ff4343 100%)";
     });
-    //
-    // window.addEventListener('df-chat-open-changed', (event) => {
-    //     console.log(`Chat is ${event.detail.isOpen ? 'open' : 'closed'}`);
-    //
-    //     // Access all `df-card` elements with the `bot-animation` class
-    //     const accordianList = document.querySelector('df-messenger')
-    //         .shadowRoot.querySelector('.df-messenger-wrapper')
-    //         .querySelector('df-messenger-chat')
-    //         .shadowRoot.querySelector('df-message-list')
-    //         .shadowRoot.querySelector('.message-list-wrapper')
-    //         .querySelector('#messegeList');
-    //
-    //     // // Check if the list contains any elements
-    //     // if (accordianList.length > 0) {
-    //     //     console.log('Found df-card.bot-animation elements:', accordianList);
-    //     //
-    //     //     const accordianElement = document.querySelectorAll('df-card.bot-animation').shadowRoot.querySelectorAll('df-accordion').querySelector('#dfAccordionWrapper');
-    //     //     accordianElement.classList.add('dfAccordionWrapper');
-    //     // } else {
-    //     //     console.log('No df-card.bot-animation elements found');
-    //     // }
-    // });
+
+    window.addEventListener('df-messenger-loaded', () => {
+
+        const dfMessengerWrapper = document.querySelector("df-messenger")
+            .shadowRoot.querySelector("df-messenger-chat").
+            shadowRoot.querySelector(".chat-wrapper");
+
+        dfMessengerWrapper.style.height = "300px";
+        dfMessengerWrapper.style.width = "500px";
+    });
+    window.addEventListener('dfMessengerLoaded', function (event) {
+        const dfMessengers = document.querySelector('df-messenger');
+        const style = document.createElement('style');
+
+        const nonMobileMinWidth = 501; // Breakpoint where DF Messenger switches between mobile/non-mobile styles
+
+        style.textContent = '@media screen and (min-width: ' + nonMobileMinWidth + 'px) { .chat-wrapper { max-height: 65% } }';
+
+        dfMessengers.shadowRoot.querySelector('df-messenger-chat').shadowRoot.appendChild(style);
+    });
+
     const dfMessenger = document.querySelector('df-messenger');
     dfMessenger.addEventListener('df-accordion-clicked', function(event) {
         console.log('Accordion was clicked')

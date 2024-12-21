@@ -114,5 +114,20 @@ public class SeatService {
             return dto;
         }).collect(Collectors.toList());
     }
+    public List<SeatDto> getAllSeatsByRoom(Long roomId) {
+        List<Seat> seats = getSeatListByRoomId(roomId);
+
+        return seats.stream().map(seat -> {
+            SeatDto dto = new SeatDto();
+            dto.setId(seat.getId());
+            dto.setSymbol(seat.getSymbol());
+            dto.setSeatType(seat.getSeattype().getType());
+            dto.setRoomName(seat.getRoom().getName());
+            dto.setPrice(seat.getSeattype().getPrice());
+            dto.setImage(seat.getImage());
+            dto.setStatus(false); // Mặc định là ghế trống
+            return dto;
+        }).collect(Collectors.toList());
+    }
 }
 

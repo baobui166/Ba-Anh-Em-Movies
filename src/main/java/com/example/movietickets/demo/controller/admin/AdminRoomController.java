@@ -25,11 +25,11 @@ public class AdminRoomController {
     private final CinemaService cinemaService;
     @Autowired
     private final SeatService seatService;
-//
+    //
 //    @Autowired
 //    private final SeatStatusService seatStatusService;
-@Autowired
-private final ScheduleServiceImpl scheduleService;
+    @Autowired
+    private final ScheduleServiceImpl scheduleService;
 
     // Hiển thị danh sách danh mục
     @GetMapping("/rooms")
@@ -41,36 +41,33 @@ private final ScheduleServiceImpl scheduleService;
     }
 
     @GetMapping("/rooms/{id}")
-    public String getRoom(@PathVariable Long id, Model model , @RequestParam(value = "scheduleId", required = false) Long scheduleId) {
-        model.addAttribute("title","Chi tiết phòng");
+    public String getRoom(@PathVariable Long id, Model model,
+                          @RequestParam(value = "scheduleId", required = false) Long scheduleId) {
+        model.addAttribute("title", "Chi tiết phòng");
         Optional<Room> room = roomService.getRoomById(id);
-        if (room.isEmpty()) {
-            model.addAttribute("NaN","Room Empty");
-            return "/admin/room/room-detail";
-        }
 
         List<Schedule> schedules = scheduleService.getByRoomId(id);
-        model.addAttribute("schedules", schedules);
 
-        boolean check = CheckingNumber.isNumeric(scheduleId.toString());
-
-
-        if(check){
-            if(scheduleId == -1)
-            {
-                List<Seat> seats = seatService.getAllSeats();
-                model.addAttribute("seats", seats);
-            }
-            else {
-                List<SeatDto> seats = seatService.getSeatsByRoomAndSchedule(id,scheduleId);
-                model.addAttribute("seats", seats);
-            }
+        // Nếu không có scheduleId, chọn mặc định lịch đầu tiên
+        if (scheduleId == null && !schedules.isEmpty()) {
+            scheduleId = schedules.get(0).getId();
         }
+
+        List<SeatDto> seats;
+        // Nếu chọn "Tất cả" (value = 0)
+        if (scheduleId == 0) {
+            seats = seatService.getAllSeatsByRoom(id);
+        } else {
+            seats = seatService.getSeatsByRoomAndSchedule(id, scheduleId);
+        }
+
+        model.addAttribute("schedules", schedules);
+        model.addAttribute("seats", seats);
         model.addAttribute("room", room.get());
         model.addAttribute("selectedScheduleId", scheduleId);
+
         return "/admin/room/room-detail";
     }
-
 
     //gửi response ra view add
     @GetMapping("/rooms/add")

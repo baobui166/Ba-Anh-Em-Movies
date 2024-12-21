@@ -1,6 +1,6 @@
 package com.example.movietickets.demo.controller.general;
 
-import com.example.movietickets.demo.DTO.MoMoPaymentDto;
+import com.example.movietickets.demo.model.MoMoPaymentSave;
 import com.example.movietickets.demo.DTO.PaymentResDTO;
 import com.example.movietickets.demo.DTO.ScheduleComboDTO;
 import com.example.movietickets.demo.config.VnPayConfig;
@@ -26,11 +26,14 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
 import java.io.UnsupportedEncodingException;
-import java.net.InetAddress;
 import java.net.URI;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.text.SimpleDateFormat;
+import java.time.Instant;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
 import java.util.*;
 
 @RestController
@@ -65,6 +68,7 @@ public class PaymentController {
 
     @Autowired
     private MoMoPaymentService paymentService;
+
 
     @GetMapping("create_payment")
     public ResponseEntity<?> createPayment(@RequestParam("amount") long amount, @RequestParam("scheduleId") Long scheduleId,
@@ -219,7 +223,6 @@ public class PaymentController {
             @RequestParam(value = "comboId") String comboId) throws Exception {
 
         String orderId = String.valueOf(System.currentTimeMillis());
-        String requestId = String.valueOf(System.currentTimeMillis());
 
         ObjectMapper objectMapper = new ObjectMapper();
         ScheduleComboDTO dto = new ScheduleComboDTO(scheduleId, comboId);
@@ -237,14 +240,14 @@ public class PaymentController {
                 MoMoRequestService.orderInfo,
                 MoMoRequestService.partnerCode,
                 MoMoRequestService.getUrl() + MoMoRequestService.redirectUrl,
-                requestId,
+                orderId,
                 MoMoRequestService.requestType);
 
         String signature = MoMoRequestService.HmacSHA256(rawSignature, MoMoRequestService.secretKey);
 
         JsonObject requestBody = new JsonObject();
         requestBody.addProperty("partnerCode", MoMoRequestService.partnerCode);
-        requestBody.addProperty("requestId", requestId);
+        requestBody.addProperty("requestId", orderId);
         requestBody.addProperty("amount", String.valueOf(amount));
         requestBody.addProperty("orderId", orderId);
         requestBody.addProperty("orderInfo", MoMoRequestService.orderInfo);
@@ -256,14 +259,21 @@ public class PaymentController {
         requestBody.addProperty("extraData", MoMoRequestService.Extra_Data);
         requestBody.addProperty("signature", signature);
 
-        MoMoPaymentDto payment = new MoMoPaymentDto();
+        MoMoPaymentSave payment = new MoMoPaymentSave();
         payment.setOrderId(orderId);
-        payment.setRequestId(requestId);
+        payment.setRequestId(orderId);
         payment.setAmount(Long.parseLong(String.valueOf(amount)));
-        payment.setPaymentTime(new Date());
+        payment.setCreatedAt(new Date());
         paymentService.savePayment(payment);
+
+        System.out.println(requestBody);
+
         String response = MoMoRequestService.sendToHTTPPost(MoMoRequestService.Endpoint, requestBody.toString());
+
+        System.out.println(response);
+
         JsonObject responseObject = new JsonParser().parse(response).getAsJsonObject();
+
 
         // Kiểm tra phản hồi của MoMo
         if (responseObject.has("payUrl")) {
@@ -283,6 +293,8 @@ public class PaymentController {
         try {
             JsonObject ipnData = new JsonParser().parse(jsonStr).getAsJsonObject();
 
+            System.out.println("ipnData" + ipnData);
+
             String orderId = ipnData.get("orderId").getAsString();
             String requestId = ipnData.get("requestId").getAsString();
             Long amount = ipnData.get("amount").getAsLong();
@@ -290,6 +302,19 @@ public class PaymentController {
             Integer resultCode = ipnData.get("resultCode").getAsInt();
             String payType = ipnData.get("payType").getAsString();
             Long responseTime = ipnData.get("responseTime").getAsLong();
+
+            String extraData = ipnData.get("extraData").getAsString();
+            Optional<MoMoPaymentSave> payment = paymentService.getPaymentById(orderId);
+            if (payment.isPresent()) {
+
+                MoMoPaymentSave paymentDto = payment.get();
+                paymentDto.setAmount(amount);
+                paymentDto.setTransactionId(String.valueOf(transId));
+                paymentDto.setPaymentMethod(payType); // Giả sử bạn đã thêm trường payType vào MoMoPaymentDto
+                paymentService.savePayment(paymentDto);
+            } else {
+                return ResponseEntity.badRequest().body("{\"message\": \"Payment not found for orderId: " + orderId + "\"}");
+            }
             // Verify signature
             String rawSignature = String.format("accessKey=%s&amount=%s&extraData=%s&orderId=%s&orderInfo=%s&partnerCode=%s&requestId=%s&resultCode=%s&payType=%s&responseTime=%s",
                     MoMoRequestService.accessKey,
@@ -305,24 +330,73 @@ public class PaymentController {
             if (!signature.equals(ipnData.get("signature").getAsString())) {
                 return ResponseEntity.badRequest().body("{\"message\": \"Invalid signature\"}");
             }
-            // Cập nhật trạng thái thanh toán
-
-            Optional<MoMoPaymentDto> paymentDto = paymentService.getPaymentById(orderId);
-
-            MoMoPaymentDto payment = paymentDto.get();
-            payment.setTransactionId(paymentDto.get().getTransactionId());
-            paymentService.savePayment(payment);
-
             System.out.println(resultCode);
 
             if ("0".equals(resultCode)) {
+                ResponseEntity.ok(204);
+            }
+            else {
+                // Check the result code and handle errors accordingly
+                if ("1001".equals(resultCode)) {
+                    // Code 1001 typically indicates insufficient funds
+                    return ResponseEntity.badRequest().body("{\"message\": \"Transaction failed due to insufficient funds\"}");
+                }
+                // Handle other error codes here
+                return ResponseEntity.badRequest().body("{\"message\": \"Transaction failed. Error code: " + resultCode + "\"}");
+            }
+            // Trả về response cho MoMo
+            JsonObject response = new JsonObject();
+            response.addProperty("partnerCode", MoMoRequestService.partnerCode);
+            response.addProperty("requestId", requestId);
+            response.addProperty("orderId", orderId);
+            response.addProperty("resultCode", resultCode);
+            response.addProperty("message", "success");
+/*
+            response.addProperty("extraData", updatedExtraData);
+*/
 
-                JsonObject extraData = new JsonParser().parse(ipnData.get("extraData").getAsString()).getAsJsonObject();
-                Long scheduleId = extraData.get("scheduleId").getAsLong();
-                String comboId = extraData.get("comboId").getAsString();
-                System.out.println("schedule id "+scheduleId);
-                System.out.println("combo id "+comboId);
-                Schedule schedule = scheduleService.getScheduleById(scheduleId).orElseThrow(() -> new IllegalArgumentException("Invalid schedule Id"));
+            return ResponseEntity.ok(response.toString());
+
+        } catch (Exception e) {
+            JsonObject errorResponse = new JsonObject();
+            errorResponse.addProperty("resultCode", "99");
+            errorResponse.addProperty("message", "Error processing IPN: " + e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(errorResponse.toString());
+        }
+    }
+
+    @GetMapping("/momo/momo-return")
+    public ResponseEntity<?> processMoMoReturn(
+            @RequestParam("partnerCode") String partnerCode,
+            @RequestParam("extraData") String extraData,
+            @RequestParam("orderId") String orderId,
+            @RequestParam("requestId") String requestId,
+            @RequestParam("amount") String amount,
+            @RequestParam("payType") String payType,
+            @RequestParam("transId") Long transId,
+            @RequestParam("resultCode") String resultCode,
+            @RequestParam("responseTime") Long responseTime,
+            @RequestParam("message") String message) {
+
+        try {
+            HttpHeaders headers = new HttpHeaders();
+
+            String decodedExtraData = new String(Base64.getDecoder().decode(extraData));
+            JsonObject extraDataJson = new JsonParser().parse(decodedExtraData).getAsJsonObject();
+
+            System.out.println(extraDataJson);
+
+            // Kiểm tra payment trong database
+            Optional<MoMoPaymentSave> payment = paymentService.getPaymentById(orderId);
+            MoMoPaymentSave momo = payment.get();
+
+            if ("0".equals(resultCode)) {
+                // Thanh toán thành công
+                Long scheduleId = extraDataJson.get("scheduleId").getAsLong();
+                String comboId = extraDataJson.get("comboId").getAsString();
+
+                Schedule schedule = scheduleService.getScheduleById(scheduleId)
+                        .orElseThrow(() -> new IllegalArgumentException("Invalid schedule Id"));
 
                 Purchase purchase = purchaseService.Get();
                 List<String> seatSymbols = new ArrayList<>();
@@ -339,7 +413,6 @@ public class PaymentController {
                     comboFoodId = Long.parseLong(comboDetails[0]);
                     comboPrice = Long.parseLong(comboDetails[1]);
                 }
-
                 Booking booking = new Booking();
                 booking.setFilmName(purchase.getFilmTitle());
                 booking.setPoster(purchase.getPoster());
@@ -351,124 +424,41 @@ public class PaymentController {
                 booking.setPayment("MoMo");
                 booking.setStatus(true);
                 booking.setCreateAt(new Date());
-                booking.setPrice(purchase.getTotalPrice() + comboPrice); //cộng thêm giá từ food
+                booking.setPrice(purchase.getTotalPrice() + comboPrice);
 
                 if (comboFoodId != null) {
-                    ComboFood comboFood = comboFoodService.getComboFoodById(comboFoodId).orElseThrow(() -> new EntityNotFoundException("Combo not found"));
+                    ComboFood comboFood = comboFoodService.getComboFoodById(comboFoodId)
+                            .orElseThrow(() -> new EntityNotFoundException("Combo not found"));
                     booking.setComboFood(comboFood);
                 }
+
                 Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
                 User user = getUserFromAuthentication(authentication);
                 booking.setUser(user);
 
+
                 bookingService.saveBooking(booking, seats, schedule);
-            }
-            else {
-                // Check the result code and handle errors accordingly
-                if ("1001".equals(resultCode)) {
-                    // Code 1001 typically indicates insufficient funds
-                    return ResponseEntity.badRequest().body("{\"message\": \"Transaction failed due to insufficient funds\"}");
-                }
-                // Handle other error codes here
-                return ResponseEntity.badRequest().body("{\"message\": \"Transaction failed. Error code: " + resultCode + "\"}");
-            }
-            // Trả về response cho MoMo
-            JsonObject response = new JsonObject();
-            response.addProperty("partnerCode", MoMoRequestService.partnerCode);
-            response.addProperty("requestId", requestId);
-            response.addProperty("orderId", orderId);
-            response.addProperty("resultCode", "0");
-            response.addProperty("message", "success");
+                momo.setBooking(booking);
+                momo.setPaymentMethod(payType);
+                momo.setTransactionId(Long.toString(transId));
+                momo.setPaymentTime(new Date());
+                momo.setPaymentStatus("SUCCESS");
+                if(message.contains("Thất bại"))
+                    momo.setFailureMessage(message);
 
-            return ResponseEntity.ok(response.toString());
+                LocalDateTime dateTime = LocalDateTime.ofInstant(Instant.ofEpochMilli(responseTime), ZoneId.systemDefault());
+                DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd-MM-yyyy HH:mm:ss");
+                String formattedDate = dateTime.format(formatter);
 
-        } catch (Exception e) {
-            JsonObject errorResponse = new JsonObject();
-            errorResponse.addProperty("resultCode", "99");
-            errorResponse.addProperty("message", "Error processing IPN: " + e.getMessage());
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(errorResponse.toString());
-        }
-    }
+                momo.setResponseTime(LocalDateTime.parse(formattedDate));
 
-    @GetMapping("/momo/momo-return")
-    public ResponseEntity<Void> processMoMoReturn(
-            @RequestParam("partnerCode") String partnerCode,
-            @RequestParam("extraData") String extraData,
-            @RequestParam("orderId") String orderId,
-            @RequestParam("requestId") String requestId,
-            @RequestParam("amount") String amount,
-            @RequestParam("resultCode") String resultCode,
-            @RequestParam("message") String message) {
-
-        try {
-            HttpHeaders headers = new HttpHeaders();
-
-            String decodedExtraData = new String(Base64.getDecoder().decode(extraData));
-            JsonObject extraDataJson = new JsonParser().parse(decodedExtraData).getAsJsonObject();
-
-            // Kiểm tra payment trong database
-            Optional<MoMoPaymentDto> payment = paymentService.getPaymentById(orderId);
-
-            if (payment.isPresent()) {
-                if ("0".equals(resultCode)) {
-                    // Thanh toán thành công
-                    Long scheduleId = extraDataJson.get("scheduleId").getAsLong();
-                    String comboId = extraDataJson.get("comboId").getAsString();
-
-                    Schedule schedule = scheduleService.getScheduleById(scheduleId)
-                            .orElseThrow(() -> new IllegalArgumentException("Invalid schedule Id"));
-
-                    Purchase purchase = purchaseService.Get();
-                    List<String> seatSymbols = new ArrayList<>();
-                    for (Purchase.Seat2 seat : purchase.getSeatsList()) {
-                        seatSymbols.add(seat.getSymbol());
-                    }
-                    Room room = roomRepository.findByName(purchase.getRoomName());
-                    List<Seat> seats = bookingService.getSeatsFromSymbolsAndRoom(seatSymbols, room);
-
-                    Long comboFoodId = null;
-                    Long comboPrice = 0L;
-                    if (!comboId.equals("0-0")) { // Kiểm tra xem có chọn combo hay không
-                        String[] comboDetails = comboId.split("-");
-                        comboFoodId = Long.parseLong(comboDetails[0]);
-                        comboPrice = Long.parseLong(comboDetails[1]);
-                    }
-
-                    Booking booking = new Booking();
-                    booking.setFilmName(purchase.getFilmTitle());
-                    booking.setPoster(purchase.getPoster());
-                    booking.setCinemaName(purchase.getCinemaName());
-                    booking.setCinemaAddress(purchase.getCinemaAddress());
-                    booking.setStartTime(parseDate(purchase.getStartTime()));
-                    booking.setSeatName(purchase.getSeats());
-                    booking.setRoomName(purchase.getRoomName());
-                    booking.setPayment("MoMo");
-                    booking.setStatus(true);
-                    booking.setCreateAt(new Date());
-                    booking.setPrice(purchase.getTotalPrice() + comboPrice);
-
-                    if (comboFoodId != null) {
-                        ComboFood comboFood = comboFoodService.getComboFoodById(comboFoodId)
-                                .orElseThrow(() -> new EntityNotFoundException("Combo not found"));
-                        booking.setComboFood(comboFood);
-                    }
-
-                    Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-                    User user = getUserFromAuthentication(authentication);
-                    booking.setUser(user);
-
-                    bookingService.saveBooking(booking, seats, schedule);
-
-                    // Luôn chuyển hướng đến trang thành công khi resultCode là 0
-                    headers.setLocation(URI.create("/purchase/history?status=success"));
-                } else {
-                    // Thanh toán thất bại
-                    String encodedMessage = URLEncoder.encode(message, StandardCharsets.UTF_8);
-                    headers.setLocation(URI.create("/purchase/history?status=failed&message=" + encodedMessage));
-                }
+                paymentService.savePayment(momo);
+                // Luôn chuyển hướng đến trang thành công khi resultCode là 0
+                headers.setLocation(URI.create("/purchase/history?status=success"));
             } else {
-                // Không tìm thấy thông tin thanh toán
-                headers.setLocation(URI.create("/purchase/history?status=failed"));
+                // Thanh toán thất bại
+                String encodedMessage = URLEncoder.encode(message, StandardCharsets.UTF_8);
+                headers.setLocation(URI.create("/purchase/history?status=failed&message=" + encodedMessage));
             }
 
             return new ResponseEntity<>(headers, HttpStatus.MOVED_PERMANENTLY);
