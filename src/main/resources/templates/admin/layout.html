@@ -26,6 +26,10 @@
         body {
             background-color: #000000e0;
         }
+
+        .sidebar__logo:before{
+            bottom: -12px;
+        }
     </style>
 </head>
 <body>
@@ -50,7 +54,7 @@
 <!-- sidebar -->
 <div class="sidebar">
     <!-- sidebar logo -->
-    <a th:href="@{/admin}" class="sidebar__logo">
+    <a th:href="@{/admin}" class="sidebar__logo" style="margin-top: 38px;">
         <img th:src="@{/assets/img/logo/logo1.png}" alt=""/>
     </a>
     <!-- end sidebar logo -->
